@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "start": "node dist/http-server.js",
     "start:stdio": "node dist/index.js",
     "start:http": "node dist/http-server.js",
     "dev:http": "tsx src/http-server.ts",
