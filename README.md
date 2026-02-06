@@ -1,87 +1,89 @@
-# Coda MCP Server (Fork)
+# Coda MCP Server (Koyeb + LangSmith)
 
-Serveur MCP Coda avec:
-- transport **Streamable HTTP** (`/mcp`) pour LangSmith Agent Builder
-- transport **SSE legacy** (`/sse`)
-- transport **stdio** (`dist/index.js`) pour clients desktop
+This repo runs a Coda MCP server with:
+- Streamable HTTP endpoint: `/mcp` (recommended)
+- Legacy SSE endpoint: `/sse`
 
-## Pourquoi 15 outils ici (vs fork d'origine plus large)
+## Quick Start (Koyeb First)
 
-Ce fork expose **15 outils “core”** (documents, pages, tables, rows, formulas, controls, auth), volontairement plus compact pour rester stable côté Agent Builder.
+### 1. Fork or use this repo on GitHub
 
-Le repo amont `dustinrgood/coda-mcp` annonce actuellement **34 tools** dans son README (ligne “Total: 34 tools available”).  
-Ici, le scope est réduit et orienté usage opérationnel.
+Use this repository in your own GitHub account (for example `RunLittleTurtle/mcp-coda`).
 
-## Outils disponibles (15)
+### 2. Create a Koyeb account and connect GitHub
 
-- Auth: `coda_whoami`
-- Documents: `coda_list_docs`, `coda_get_doc`, `coda_create_doc`, `coda_delete_doc`
-- Pages: `coda_list_pages`
-- Tables: `coda_list_tables`, `coda_get_table`, `coda_list_columns`
-- Rows: `coda_list_rows`, `coda_create_row`, `coda_update_row`
-- Formulas: `coda_list_formulas`
-- Controls: `coda_list_controls`, `coda_push_button`
+In Koyeb:
+1. Create a new **Web service**
+2. Select your GitHub repo and `main` branch
+3. Keep **Buildpack** as builder
+4. Choose **Free / CPU Eco** instance
 
-## Installation
+### 3. Set environment variables
+
+Add these variables in Koyeb:
+- `API_KEY` = your Coda API key
+- `PORT` = `3000`
+
+![Koyeb environment variables](docs/images/koyeb-env-vars.png)
+
+### 4. Configure port
+
+In Koyeb Ports:
+- Port: `3000`
+- Protocol: `HTTP`
+- Public HTTPS access: enabled
+
+![Koyeb port configuration](docs/images/koyeb-port-3000.png)
+
+### 5. Deploy
+
+Click **Save and deploy**.
+
+After deploy, your public URL will look like:
+- `https://your-service-name.koyeb.app`
+
+Health check:
+- `https://your-service-name.koyeb.app/health`
+
+MCP endpoint:
+- `https://your-service-name.koyeb.app/mcp`
+
+## LangSmith Agent Builder Setup
+
+Add an MCP server with:
+- **Name**: `mcp-coda` (or your preferred name)
+- **URL**: `https://your-service-name.koyeb.app/mcp`
+- **Authentication**: `Static Headers`
+- **Headers**: none
+
+![LangSmith MCP settings](docs/images/langsmith-mcp-settings.png)
+
+Important:
+- Use `/mcp` (not `/` and not `/sse` in Agent Builder)
+- If tools do not appear after a redeploy, wait a few seconds and reload Agent Builder
+
+## Local (minimal)
 
 ```bash
 pnpm install
 pnpm build
-echo "API_KEY=votre-cle-coda" > .env
+echo "API_KEY=your-coda-key" > .env
+PORT=3000 pnpm start:http
 ```
 
-## Lancer en local
+Then test:
+- `http://localhost:3000/health`
+- `http://localhost:3000/mcp`
 
-```bash
-PORT=3023 pnpm start:http
-```
+## Environment variables
 
-Endpoints:
-- `GET /health`
-- `GET|POST|DELETE /mcp` (recommandé)
-- `GET /sse` + `POST /message` (legacy)
+- `API_KEY` or `CODA_API_KEY` (required)
+- `PORT` (optional, default `3000`)
 
-## Agent Builder (LangSmith)
+## Credits
 
-Dans “Add MCP server”:
-- Name: `coda-mcp`
-- URL: `http://localhost:3023/mcp`
-- Auth: `Static Headers`
-- Headers: vide
-
-Si “Failed to load tools” apparaît:
-- vérifier que l’URL finit par `/mcp`
-- vérifier qu’Agent Builder peut atteindre `localhost`
-- si besoin, exposer en HTTPS public (Koyeb / tunnel)
-
-## Déploiement Koyeb (GitHub)
-
-Réglages service web:
-- Build command: `pnpm install && pnpm build`
-- Start command: `pnpm start:http`
-- Environment variable: `API_KEY=<votre-cle>`
-- Health check path: `/health`
-
-Puis dans Agent Builder:
-- URL: `https://<votre-app>.koyeb.app/mcp`
-
-## Développement
-
-```bash
-pnpm dev:http
-pnpm dev:stdio
-pnpm build
-```
-
-## Variables d'environnement
-
-- `API_KEY` ou `CODA_API_KEY` (requis)
-- `PORT` (optionnel, défaut `3000`)
-
-## Crédits
-
-- Projet d'origine: [dustinrgood/coda-mcp](https://github.com/dustinrgood/coda-mcp)
-- Fork initial du projet d'origine: [orellazri/coda-mcp](https://github.com/orellazri/coda-mcp)
+- Original project: [dustinrgood/coda-mcp](https://github.com/dustinrgood/coda-mcp)
+- Early fork lineage: [orellazri/coda-mcp](https://github.com/orellazri/coda-mcp)
 
 ## License
 
