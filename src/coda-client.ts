@@ -254,7 +254,10 @@ export class CodaClient {
     addedRowIds?: string[];
     [key: string]: unknown;
   }> {
-    const { data } = await this.client.post(`/docs/${docId}/tables/${tableId}/rows`, params);
+    const { disableParsing, ...body } = params;
+    const { data } = await this.client.post(`/docs/${docId}/tables/${tableId}/rows`, body, {
+      params: typeof disableParsing === 'boolean' ? { disableParsing } : undefined,
+    });
     return data;
   }
 
@@ -269,9 +272,13 @@ export class CodaClient {
       disableParsing?: boolean;
     }
   ): Promise<CodaRow> {
+    const { disableParsing, ...body } = params;
     const { data } = await this.client.put(
       `/docs/${docId}/tables/${tableId}/rows/${rowId}`,
-      params
+      body,
+      {
+        params: typeof disableParsing === 'boolean' ? { disableParsing } : undefined,
+      }
     );
     return data;
   }
