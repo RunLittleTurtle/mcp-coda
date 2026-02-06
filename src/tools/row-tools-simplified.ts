@@ -58,6 +58,25 @@ export function getRowTools() {
               required: ['cells'],
             },
           },
+          row: {
+            type: 'object',
+            description:
+              'Optional legacy alias for a single row object. Prefer `cells` or `rows`.',
+            properties: {
+              cells: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    column: { type: 'string', description: 'Column ID or name' },
+                    value: { description: 'Value to set' },
+                  },
+                  required: ['column', 'value'],
+                },
+              },
+            },
+            required: ['cells'],
+          },
           keyColumns: {
             type: 'array',
             description:
@@ -120,6 +139,8 @@ export async function handleRowToolCall(request: any, client: CodaClient) {
           ? args.rows
           : Array.isArray(args.cells)
             ? [{ cells: args.cells }]
+            : args.row && Array.isArray(args.row.cells)
+              ? [args.row]
             : null;
 
         if (!rowsPayload || rowsPayload.length === 0) {
