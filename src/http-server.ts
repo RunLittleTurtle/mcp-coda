@@ -94,7 +94,30 @@ app.get('/sse', async (req, res) => {
 });
 
 // Streamable HTTP endpoint (recommended for LangSmith Agent Builder)
+function normalizeMcpAcceptHeader(req: express.Request): void {
+  const acceptHeader = req.headers.accept;
+  const current = typeof acceptHeader === 'string' ? acceptHeader : '';
+  const normalized = current.toLowerCase();
+
+  // Some clients send only application/json, but MCP SDK currently expects both values.
+  if (!current) {
+    req.headers.accept = 'application/json, text/event-stream';
+    return;
+  }
+
+  if (normalized.includes('application/json') && !normalized.includes('text/event-stream')) {
+    req.headers.accept = `${current}, text/event-stream`;
+    return;
+  }
+
+  if (normalized.includes('text/event-stream') && !normalized.includes('application/json')) {
+    req.headers.accept = `${current}, application/json`;
+  }
+}
+
 app.all('/mcp', async (req, res) => {
+  normalizeMcpAcceptHeader(req);
+
   const rawSessionId = req.headers['mcp-session-id'];
   const sessionId =
     typeof rawSessionId === 'string'
