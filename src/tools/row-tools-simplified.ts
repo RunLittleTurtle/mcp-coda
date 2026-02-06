@@ -18,7 +18,8 @@ export function getRowTools() {
     },
     {
       name: 'coda_create_row',
-      description: 'Create a new row in a table',
+      description:
+        'Create a new row in a table. Accepts either `cells` for one row or `rows` for advanced/batch payload.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -36,8 +37,39 @@ export function getRowTools() {
               required: ['column', 'value'],
             },
           },
+          rows: {
+            type: 'array',
+            description: 'Optional advanced format matching Coda API: array of row objects',
+            items: {
+              type: 'object',
+              properties: {
+                cells: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      column: { type: 'string', description: 'Column ID or name' },
+                      value: { description: 'Value to set' },
+                    },
+                    required: ['column', 'value'],
+                  },
+                },
+              },
+              required: ['cells'],
+            },
+          },
+          keyColumns: {
+            type: 'array',
+            description:
+              'Optional key columns for upsert behavior (Coda API keyColumns parameter)',
+            items: { type: 'string' },
+          },
+          disableParsing: {
+            type: 'boolean',
+            description: 'Optional. If true, Coda will not parse/formula-convert input values.',
+          },
         },
-        required: ['docId', 'tableId', 'cells'],
+        required: ['docId', 'tableId'],
       },
     },
     {
@@ -61,6 +93,10 @@ export function getRowTools() {
               required: ['column', 'value'],
             },
           },
+          disableParsing: {
+            type: 'boolean',
+            description: 'Optional. If true, Coda will not parse/formula-convert input values.',
+          },
         },
         required: ['docId', 'tableId', 'rowId', 'cells'],
       },
@@ -80,10 +116,35 @@ export async function handleRowToolCall(request: any, client: CodaClient) {
         });
         return { content: [{ type: 'text', text: JSON.stringify(rows, null, 2) }] };
       case 'coda_create_row':
-        const newRow = await client.createRow(args.docId, args.tableId, { row: { cells: args.cells } });
-        return { content: [{ type: 'text', text: JSON.stringify(newRow, null, 2) }] };
+        const rowsPayload = Array.isArray(args.rows)
+          ? args.rows
+          : Array.isArray(args.cells)
+            ? [{ cells: args.cells }]
+            : null;
+
+        if (!rowsPayload || rowsPayload.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: coda_create_row requires `cells` (single row) or `rows` (array).',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const createResult = await client.createRow(args.docId, args.tableId, {
+          rows: rowsPayload,
+          keyColumns: Array.isArray(args.keyColumns) ? args.keyColumns : undefined,
+          disableParsing: typeof args.disableParsing === 'boolean' ? args.disableParsing : undefined,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(createResult, null, 2) }] };
       case 'coda_update_row':
-        const updatedRow = await client.updateRow(args.docId, args.tableId, args.rowId, { row: { cells: args.cells } });
+        const updatedRow = await client.updateRow(args.docId, args.tableId, args.rowId, {
+          row: { cells: args.cells },
+          disableParsing: typeof args.disableParsing === 'boolean' ? args.disableParsing : undefined,
+        });
         return { content: [{ type: 'text', text: JSON.stringify(updatedRow, null, 2) }] };
       default:
         return { content: [{ type: 'text', text: 'Tool not found' }], isError: true };

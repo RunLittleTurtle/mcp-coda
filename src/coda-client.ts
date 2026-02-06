@@ -243,13 +243,17 @@ export class CodaClient {
     docId: string,
     tableId: string,
     params: {
-      row: {
+      rows: Array<{
         cells: Array<{ column: string; value: any }>;
-      };
+      }>;
       keyColumns?: string[];
       disableParsing?: boolean;
     }
-  ): Promise<CodaRow> {
+  ): Promise<{
+    requestId?: string;
+    addedRowIds?: string[];
+    [key: string]: unknown;
+  }> {
     const { data } = await this.client.post(`/docs/${docId}/tables/${tableId}/rows`, params);
     return data;
   }
