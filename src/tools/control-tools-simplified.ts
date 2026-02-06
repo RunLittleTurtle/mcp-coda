@@ -16,14 +16,31 @@ export function getControlTools() {
     },
     {
       name: 'coda_push_button',
-      description: 'Push a button control in a Coda document',
+      description:
+        'Push a button in a Coda table row (recommended: docId + tableId + rowId + columnId). Legacy controlId fallback is also supported.',
       inputSchema: {
         type: 'object',
         properties: {
           docId: { type: 'string', description: 'The ID of the document' },
-          controlId: { type: 'string', description: 'The ID or name of the button control' },
+          tableId: {
+            type: 'string',
+            description: 'The table ID or name containing the button column',
+          },
+          rowId: {
+            type: 'string',
+            description: 'The row ID or name where the button will be pushed',
+          },
+          columnId: {
+            type: 'string',
+            description: 'The button column ID or name to push',
+          },
+          controlId: {
+            type: 'string',
+            description:
+              'Legacy fallback only. Prefer tableId + rowId + columnId for Coda API v1 compatibility.',
+          },
         },
-        required: ['docId', 'controlId'],
+        required: ['docId'],
       },
     },
   ];
@@ -37,8 +54,43 @@ export async function handleControlToolCall(request: any, client: CodaClient) {
         const controls = await client.listControls(args.docId, { limit: args.limit || 100 });
         return { content: [{ type: 'text', text: JSON.stringify(controls, null, 2) }] };
       case 'coda_push_button':
-        const result = await client.pushButton(args.docId, args.controlId);
-        return { content: [{ type: 'text', text: `Button pushed successfully. Request ID: ${result.requestId}` }] };
+        if (args.tableId && args.rowId && args.columnId) {
+          const result = await client.pushButton(args.docId, args.tableId, args.rowId, args.columnId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Button pushed successfully. Request ID: ${result.requestId ?? 'unknown'}`,
+              },
+            ],
+          };
+        }
+
+        if (args.controlId) {
+          const result = await client.pushControlButtonLegacy(args.docId, args.controlId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  `Button pushed via legacy control endpoint. ` +
+                  `Request ID: ${result.requestId ?? 'unknown'}`,
+              },
+            ],
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text:
+                'Error: coda_push_button requires either (tableId + rowId + columnId) ' +
+                'or legacy controlId.',
+            },
+          ],
+          isError: true,
+        };
       default:
         return { content: [{ type: 'text', text: 'Tool not found' }], isError: true };
     }

@@ -100,8 +100,9 @@ export class CodaClient {
     return data;
   }
 
-  async deleteDoc(docId: string): Promise<void> {
-    await this.client.delete(`/docs/${docId}`);
+  async deleteDoc(docId: string): Promise<{ requestId?: string; [key: string]: unknown }> {
+    const { data } = await this.client.delete(`/docs/${docId}`);
+    return data;
   }
 
   // Page Methods
@@ -321,7 +322,23 @@ export class CodaClient {
     return data;
   }
 
-  async pushButton(docId: string, controlId: string): Promise<{ requestId: string }> {
+  async pushButton(
+    docId: string,
+    tableId: string,
+    rowId: string,
+    columnId: string
+  ): Promise<{ requestId?: string; [key: string]: unknown }> {
+    const { data } = await this.client.post(
+      `/docs/${docId}/tables/${tableId}/rows/${rowId}/buttons/${columnId}`
+    );
+    return data;
+  }
+
+  // Legacy endpoint kept as fallback for older Coda API behavior.
+  async pushControlButtonLegacy(
+    docId: string,
+    controlId: string
+  ): Promise<{ requestId?: string; [key: string]: unknown }> {
     const { data } = await this.client.post(`/docs/${docId}/controls/${controlId}/push`);
     return data;
   }

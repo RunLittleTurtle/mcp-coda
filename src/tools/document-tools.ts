@@ -150,12 +150,14 @@ export async function handleDocumentToolCall(request: any, client: CodaClient) {
       }
 
       case 'coda_delete_doc': {
-        await client.deleteDoc(args.docId);
+        const result = await client.deleteDoc(args.docId);
         return {
           content: [
             {
               type: 'text',
-              text: `Document ${args.docId} deleted successfully`,
+              text:
+                `Document delete queued for ${args.docId}. ` +
+                `Request ID: ${result.requestId ?? 'unknown'}`,
             },
           ],
         };
