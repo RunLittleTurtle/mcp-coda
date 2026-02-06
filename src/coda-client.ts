@@ -272,7 +272,7 @@ export class CodaClient {
       };
       disableParsing?: boolean;
     }
-  ): Promise<CodaRow> {
+  ): Promise<{ requestId?: string; id?: string; [key: string]: unknown }> {
     const { disableParsing, ...body } = params;
     const { data } = await this.client.put(
       `/docs/${docId}/tables/${tableId}/rows/${rowId}`,
